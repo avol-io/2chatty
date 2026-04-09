@@ -9,9 +9,9 @@
 
 > **Pick your source files. Dump them into markdown. Feed your AI.**
 
-[![npm version](https://img.shields.io/npm/v/@avol.io/2chatty)](https://www.npmjs.com/package/@avol.io/2chatty)
-[![license](https://img.shields.io/npm/l/@avol.io/2chatty)](./LICENSE)
-[![node](https://img.shields.io/node/v/@avol.io/2chatty)](https://nodejs.org)
+[![npm version](https://img.shields.io/npm/v/@avol-io/2chatty)](https://www.npmjs.com/package/@avol-io/2chatty)
+[![license](https://img.shields.io/npm/l/@avol-io/2chatty)](./LICENSE)
+[![node](https://img.shields.io/node/v/@avol-io/2chatty)](https://nodejs.org)
 
 ---
 
@@ -52,23 +52,23 @@ Each selected file is appended to `chat.md` as a fenced code block:
 No installation needed — just use `npx`:
 
 ```bash
-npx @avol.io/2chatty <ext1> [ext2] [ext3] ...
+npx @avol-io/2chatty <ext1> [ext2] [ext3] ...
 ```
 
 ### Examples
 
 ```bash
 # TypeScript + React project
-npx @avol.io/2chatty ts tsx
+npx @avol-io/2chatty ts tsx
 
 # Full-stack — grab everything relevant
-npx @avol.io/2chatty ts tsx scss
+npx @avol-io/2chatty ts tsx scss
 
 # Plain JavaScript project
-npx @avol.io/2chatty js jsx css
+npx @avol-io/2chatty js jsx css
 
 # Multiple extensions at once
-npx @avol.io/2chatty ts tsx html scss json
+npx @avol-io/2chatty ts tsx html scss json
 ```
 
 Run from your **project root**. The tool scans from the current working directory and appends selected file contents to `chat.md` in the same folder.

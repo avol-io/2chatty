@@ -1,5 +1,5 @@
 {
-  "name": "@avol.io/2chatty",
+  "name": "@avol-io/2chatty",
   "version": "1.0.0",
   "description": "Interactive TUI to collect source files into a markdown file ready for AI chat",
   "keywords": [
