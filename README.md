@@ -38,12 +38,13 @@ Selected: 5 / 38
 
 Each selected file is appended to `chat.md` as a fenced code block:
 
-```md
+````md
 ### `src/components/Button.tsx`
 
 ```tsx
 // ... file content ...
 ```
+````
 
 
 
@@ -52,7 +53,7 @@ Each selected file is appended to `chat.md` as a fenced code block:
 No installation needed — just use `npx`:
 
 ```bash
-npx @avol-io/2chatty <ext1> [ext2] [ext3] ...
+npx @avol-io/2chatty [ext1] [ext2] [ext3] ...
 ```
 
 ### Examples
@@ -67,13 +68,22 @@ npx @avol-io/2chatty ts tsx scss
 # Plain JavaScript project
 npx @avol-io/2chatty js jsx css
 
-# Multiple extensions at once
-npx @avol-io/2chatty ts tsx html scss json
+# Java project
+npx @avol-io/2chatty java
+
+# No filter — collect all files (asks for confirmation)
+npx @avol-io/2chatty
 ```
 
 Run from your **project root**. The tool scans from the current working directory and appends selected file contents to `chat.md` in the same folder.
 
 > **Tip:** `chat.md` is *appended*, not overwritten. Run the tool multiple times to collect files across different sessions. Delete `chat.md` manually to start fresh.
+
+### No-filter mode
+
+If you run `2chatty` without specifying any extension, it will ask for confirmation before scanning all files in the project:
+
+
 
 
 
@@ -106,7 +116,8 @@ Run from your **project root**. The tool scans from the current working director
 ## Output format
 
 Selected files are appended to `chat.md` in your project root, each wrapped in a fenced markdown code block with the correct language tag:
-````
+
+````md
 ### `src/components/Button.tsx`
 
 ```tsx
@@ -115,12 +126,13 @@ import React from 'react';
 ```
 
 ### `src/styles/main.scss`
-  
+
 ```scss
 $primary: #01696f;
 // ...
 ```
 ````
+
 This format is recognised and rendered correctly by all major AI chat interfaces.
 
 
@@ -129,9 +141,15 @@ This format is recognised and rendered correctly by all major AI chat interfaces
 
 The following directories are automatically ignored during the file scan:
 
-`.git` · `node_modules` · `dist` · `build` · `.next` · `coverage` · `.cache` · `.turbo` · `out`
+| Category | Directories |
+|---|---|
+| VCS | `.git` · `.svn` · `.hg` |
+| JS / Node | `node_modules` · `dist` · `build` · `.next` · `coverage` · `.cache` · `.turbo` · `out` · `.nuxt` · `.output` · `.svelte-kit` |
+| Java / Maven / Gradle | `target` · `.gradle` · `.mvn` |
+| IDE | `.idea` · `.vscode` · `.eclipse` · `.settings` |
+| Misc | `__pycache__` · `.pytest_cache` · `.mypy_cache` · `vendor` |
 
-Hidden files and folders (starting with `.`) are also skipped.
+> **Note:** hidden files and folders (e.g. `.storybook`, `.env`, `.eslintrc`) are **included** in the scan — only the directories listed above are excluded. This ensures config files relevant to your project are always visible and selectable.
 
 
 
@@ -144,4 +162,4 @@ Hidden files and folders (starting with `.`) are also skipped.
 
 ## License
 
-[MIT](./LICENSE) © avol.io
+[MIT](./LICENSE) © [avol.io](https//www.avol.io)
