@@ -1,0 +1,11 @@
+{
+  "name": "2chatty",
+  "version": "1.0.0",
+  "description": "Alias for @avol-io/2chatty",
+  "bin": {
+    "2chatty": "./index.js"
+  },
+  "dependencies": {
+    "@avol-io/2chatty": "latest"
+  }
+}
