@@ -17,7 +17,7 @@
     "type": "git",
     "url": "git+https://github.com/avol-io/2chatty.git"
   },
-  "homepage": "https://github.com/avol-io/2chatty#readme",
+  "homepage": "https://www.avol.io/2chatty",
   "engines": {
     "node": ">=18"
   },

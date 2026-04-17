@@ -162,4 +162,4 @@ The following directories are automatically ignored during the file scan:
 
 ## License
 
-[MIT](./LICENSE) © [avol.io](https//www.avol.io)
+[MIT](./LICENSE) © [avol.io](https://www.avol.io)

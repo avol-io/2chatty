@@ -1,0 +1,1230 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>2chatty — Feed your AI</title>
+  <meta name="description" content="Pick your source files. Dump them into markdown. Feed your AI." />
+  <meta property="og:title" content="2chatty" />
+  <meta property="og:description" content="Pick your source files. Dump them into markdown. Feed your AI." />
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>◆</text></svg>" />
+  <style>
+    /* ── Reset & base ──────────────────────────────────────────────── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #000;
+      --bg-1: #0a0a0a;
+      --bg-2: #111;
+      --bg-3: #1a1a1a;
+      --border: rgba(255,255,255,.08);
+      --border-mid: rgba(255,255,255,.12);
+      --text: #ededed;
+      --text-muted: #888;
+      --text-dim: #555;
+      --accent: #fff;
+      --cyan: #00d2ff;
+      --green: #3ecf8e;
+      --yellow: #f5a623;
+      --radius: 12px;
+      --radius-sm: 8px;
+      --mono: 'SF Mono', 'Fira Code', 'Cascadia Code', 'Consolas', monospace;
+      --sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--sans);
+      line-height: 1.6;
+      overflow-x: hidden;
+    }
+
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    .container {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 0 24px;
+      position: relative;
+      z-index: 1;
+    }
+
+    section { padding: 96px 0; }
+    section + section { border-top: 1px solid var(--border); }
+
+    /* ── NAV ────────────────────────────────────────────────────────── */
+    nav {
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      border-bottom: 1px solid var(--border);
+      backdrop-filter: blur(20px);
+      background: rgba(0,0,0,.7);
+    }
+
+    .nav-inner {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      height: 56px;
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 0 24px;
+    }
+
+    .nav-logo {
+      font-family: var(--mono);
+      font-size: 15px;
+      font-weight: 700;
+      color: var(--text);
+      text-decoration: none;
+      letter-spacing: -.5px;
+    }
+
+    .nav-logo .diamond { color: var(--cyan); }
+
+    .nav-links {
+      display: flex;
+      gap: 24px;
+      list-style: none;
+    }
+
+    .nav-links a {
+      color: var(--text-muted);
+      text-decoration: none;
+      font-size: 14px;
+      transition: color .2s;
+    }
+
+    .nav-links a:hover { color: var(--text); }
+
+    .nav-cta {
+      background: var(--text);
+      color: var(--bg) !important;
+      padding: 6px 14px;
+      border-radius: 6px;
+      font-weight: 600;
+      font-size: 13px !important;
+      transition: opacity .2s !important;
+    }
+
+    .nav-cta:hover { opacity: .85; }
+
+    /* ── HERO ────────────────────────────────────────────────────────── */
+    .hero {
+      padding: 120px 0 80px;
+      text-align: center;
+    }
+
+    .hero-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      border: 1px solid var(--border-mid);
+      border-radius: 999px;
+      padding: 4px 12px;
+      font-size: 12px;
+      color: var(--text-muted);
+      margin-bottom: 40px;
+      font-family: var(--mono);
+    }
+
+    .hero-badge .dot {
+      width: 6px; height: 6px;
+      background: var(--green);
+      border-radius: 50%;
+      animation: pulse 2s infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: .3; }
+    }
+
+    .hero-title {
+      font-size: clamp(64px, 12vw, 120px);
+      font-weight: 800;
+      letter-spacing: -4px;
+      line-height: 1;
+      margin-bottom: 24px;
+      cursor: default;
+      user-select: none;
+    }
+
+    .hero-title .word-2 { color: var(--text-dim); }
+    .hero-title .word-chatty { position: relative; display: inline-block; }
+
+    .hero-title .char {
+      display: inline-block;
+      transition: transform .3s cubic-bezier(.34,1.56,.64,1), color .3s;
+    }
+
+    .hero-title .word-chatty:hover .char { color: var(--cyan); }
+    .hero-title .word-chatty:hover .char:nth-child(1) { transform: translateY(-8px) rotate(-4deg); }
+    .hero-title .word-chatty:hover .char:nth-child(2) { transform: translateY(-12px) rotate(2deg); transition-delay: .04s; }
+    .hero-title .word-chatty:hover .char:nth-child(3) { transform: translateY(-6px) rotate(-2deg); transition-delay: .08s; }
+    .hero-title .word-chatty:hover .char:nth-child(4) { transform: translateY(-14px) rotate(3deg); transition-delay: .12s; }
+    .hero-title .word-chatty:hover .char:nth-child(5) { transform: translateY(-8px) rotate(-3deg); transition-delay: .16s; }
+    .hero-title .word-chatty:hover .char:nth-child(6) { transform: translateY(-10px) rotate(2deg); transition-delay: .20s; }
+
+    .hero-subtitle {
+      font-size: clamp(16px, 2.5vw, 20px);
+      color: var(--text-muted);
+      max-width: 520px;
+      margin: 0 auto 16px;
+      font-weight: 400;
+    }
+
+    .hero-caption {
+      font-size: 14px;
+      color: var(--text-dim);
+      max-width: 560px;
+      margin: 0 auto 48px;
+      line-height: 1.7;
+    }
+
+    .hero-caption strong { color: var(--text-muted); }
+
+    .hero-actions {
+      display: flex;
+      gap: 12px;
+      justify-content: center;
+      flex-wrap: wrap;
+      margin-bottom: 24px;
+    }
+
+    .btn-primary {
+      background: var(--text);
+      color: var(--bg);
+      border: none;
+      padding: 10px 22px;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      text-decoration: none;
+      transition: opacity .2s, transform .15s;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .btn-primary:hover { opacity: .85; transform: translateY(-1px); }
+
+    .btn-secondary {
+      background: transparent;
+      color: var(--text-muted);
+      border: 1px solid var(--border-mid);
+      padding: 10px 22px;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+      text-decoration: none;
+      transition: border-color .2s, color .2s, transform .15s;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .btn-secondary:hover { border-color: rgba(255,255,255,.3); color: var(--text); transform: translateY(-1px); }
+
+    /* ── Hero snippet ───────────────────────────────────────────────── */
+    .hero-snippet {
+      max-width: 480px;
+      margin: 0 auto 80px;
+      animation: slide-down .35s cubic-bezier(.4,0,.2,1);
+    }
+
+    @keyframes slide-down {
+      from { opacity: 0; transform: translateY(-10px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    .snippet-inner {
+      display: flex;
+      align-items: center;
+      background: var(--bg-2);
+      border: 1px solid var(--border-mid);
+      border-radius: var(--radius-sm);
+      padding: 10px 16px;
+      gap: 12px;
+    }
+
+    .snippet-code {
+      font-family: var(--mono);
+      font-size: 14px;
+      color: var(--cyan);
+      flex: 1;
+      text-align: left;
+    }
+
+    .snippet-copy {
+      background: none;
+      border: 1px solid var(--border-mid);
+      border-radius: 5px;
+      color: var(--text-muted);
+      width: 30px;
+      height: 30px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: background .2s, color .2s;
+      flex-shrink: 0;
+    }
+
+    .snippet-copy:hover { background: var(--bg-3); color: var(--text); }
+    .snippet-copy.copied { color: var(--green); border-color: var(--green); }
+
+    .snippet-note {
+      font-size: 12px;
+      color: var(--text-dim);
+      margin-top: 8px;
+      text-align: center;
+    }
+
+    .snippet-note strong { color: var(--text-muted); }
+
+    /* ── TERMINAL ────────────────────────────────────────────────────── */
+    .terminal-wrap {
+      max-width: 720px;
+      margin: 0 auto;
+    }
+
+    .terminal {
+      background: var(--bg-2);
+      border: 1px solid var(--border-mid);
+      border-radius: var(--radius);
+      overflow: hidden;
+      box-shadow: 0 0 0 1px rgba(255,255,255,.04), 0 40px 80px rgba(0,0,0,.8);
+    }
+
+    .terminal-bar {
+      background: var(--bg-3);
+      padding: 12px 16px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .terminal-dots { display: flex; gap: 6px; }
+
+    .terminal-dot {
+      width: 12px; height: 12px;
+      border-radius: 50%;
+    }
+
+    .terminal-dot.red    { background: #ff5f57; }
+    .terminal-dot.yellow { background: #febc2e; }
+    .terminal-dot.green  { background: #28c840; }
+
+    .terminal-title {
+      font-family: var(--mono);
+      font-size: 12px;
+      color: var(--text-dim);
+      flex: 1;
+      text-align: center;
+      margin-right: 42px;
+    }
+
+    .terminal-body {
+      padding: 20px 24px;
+      font-family: var(--mono);
+      font-size: 13px;
+      line-height: 1.8;
+      min-height: 320px;
+    }
+
+    .t-prompt   { color: var(--green); }
+    .t-cmd      { color: var(--text); }
+    .t-dim      { color: var(--text-dim); }
+    .t-cyan     { color: var(--cyan); }
+    .t-yellow   { color: var(--yellow); }
+    .t-green    { color: var(--green); }
+    .t-white    { color: var(--text); }
+    .t-dir      { color: #7c9ef5; font-weight: 600; }
+    .t-selected { color: var(--green); font-weight: 600; }
+    .t-cursor {
+      display: inline-block;
+      width: 8px; height: 14px;
+      background: var(--cyan);
+      vertical-align: middle;
+      animation: blink .9s step-end infinite;
+    }
+
+    @keyframes blink {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0; }
+    }
+
+    /* ── PIPELINE ────────────────────────────────────────────────────── */
+    .pipeline-section { padding: 80px 0; }
+
+    .pipeline {
+      display: grid;
+      grid-template-columns: 1fr auto 1fr;
+      align-items: center;
+      gap: 32px;
+      max-width: 960px;
+      margin: 0 auto;
+    }
+
+    .pipeline-card {
+      background: var(--bg-1);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      overflow: hidden;
+    }
+
+    .pipeline-card-bar {
+      background: var(--bg-3);
+      padding: 10px 14px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .pipeline-card-bar .terminal-dots { gap: 5px; }
+    .pipeline-card-bar .terminal-dot  { width: 10px; height: 10px; }
+
+    .pipeline-card-label {
+      font-family: var(--mono);
+      font-size: 11px;
+      color: var(--text-dim);
+      margin-left: 4px;
+    }
+
+    .pipeline-card-body {
+      padding: 14px 16px;
+      font-family: var(--mono);
+      font-size: 12px;
+      line-height: 1.7;
+    }
+
+    /* Arrow */
+    .pipeline-arrow {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+      min-width: 120px;
+    }
+
+    .pipeline-arrow svg { overflow: visible; }
+
+    .arrow-path {
+      fill: none;
+      stroke: var(--cyan);
+      stroke-width: 1.5;
+      stroke-dasharray: 6 4;
+      stroke-linecap: round;
+      animation: dash-flow 2s linear infinite;
+    }
+
+    .arrow-head { fill: var(--cyan); }
+
+    @keyframes dash-flow {
+      from { stroke-dashoffset: 20; }
+      to   { stroke-dashoffset: 0; }
+    }
+
+    .pipeline-arrow-label {
+      font-size: 11px;
+      color: var(--cyan)
+      text-align: center;
+      font-family: var(--mono);
+    }
+
+    /* Doc scroll */
+    .doc-scroll-wrap {
+      height: 200px;
+      overflow: hidden;
+      position: relative;
+    }
+
+    .doc-scroll-wrap::after {
+      content: '';
+      position: absolute;
+      bottom: 0; left: 0; right: 0;
+      height: 60px;
+      background: linear-gradient(transparent, var(--bg-1));
+      pointer-events: none;
+    }
+
+    .doc-scroll {
+      animation: doc-scroll 12s linear infinite;
+    }
+
+    @keyframes doc-scroll {
+      0%   { transform: translateY(0); }
+      100% { transform: translateY(-50%); }
+    }
+
+    .doc-file {
+      padding: 8px 0 12px;
+      border-bottom: 1px solid var(--border);
+      margin-bottom: 8px;
+    }
+
+    .doc-file-name {
+      color: var(--cyan);
+      font-size: 11px;
+      margin-bottom: 4px;
+    }
+
+    .doc-file-lang {
+      display: inline-block;
+      background: rgba(255,255,255,.05);
+      border-radius: 3px;
+      padding: 0 5px;
+      font-size: 10px;
+      color: var(--text-dim);
+      margin-bottom: 4px;
+    }
+
+    .doc-file-code {
+      color: var(--text-dim);
+      font-size: 11px;
+      line-height: 1.6;
+    }
+
+    .doc-file-ellipsis {
+      color: var(--text-dim);
+      font-size: 11px;
+      opacity: .5;
+    }
+
+    /* ── Doc paper ──────────────────────────────────────────────────── */
+    .doc-paper {
+      background: #fafafa;
+      border: 1px solid #e5e5e5;
+      border-radius: var(--radius);
+      overflow: hidden;
+      box-shadow: 0 4px 24px rgba(0,0,0,.25), 0 1px 0 rgba(0,0,0,.08);
+    }
+
+    .doc-paper-header {
+      background: #f0f0f0;
+      border-bottom: 1px solid #e0e0e0;
+      padding: 10px 16px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .doc-paper-icon { font-size: 14px; }
+
+    .doc-paper-filename {
+      font-family: var(--mono);
+      font-size: 12px;
+      color: #555;
+      font-weight: 600;
+    }
+
+    .doc-paper .doc-scroll-wrap { height: 200px; }
+
+    .doc-paper .doc-scroll-wrap::after {
+      background: linear-gradient(transparent, #fafafa);
+    }
+
+    .doc-paper .doc-file {
+      padding: 8px 16px 10px;
+      border-bottom: 1px solid #ebebeb;
+    }
+
+    .doc-paper .doc-file-name {
+      font-family: var(--mono);
+      font-size: 11px;
+      color: #0070f3;
+      margin-bottom: 4px;
+    }
+
+    .doc-fence { margin-bottom: 3px; }
+
+    .doc-fence-lang {
+      display: inline-block;
+      background: #e8e8e8;
+      border-radius: 3px;
+      padding: 1px 6px;
+      font-family: var(--mono);
+      font-size: 10px;
+      color: #666;
+    }
+
+    .doc-paper .doc-file-code {
+      font-family: var(--mono);
+      font-size: 11px;
+      color: #444;
+      line-height: 1.6;
+    }
+
+    .doc-paper .doc-file-ellipsis { margin-left:2px; margin-top: 3px; }
+
+    .ellipsis-line {
+      color: #222;
+      font-size: 13px;
+      letter-spacing: 1px;
+    }
+
+    /* ── FEATURES ────────────────────────────────────────────────────── */
+    .features-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 1px;
+      background: var(--border);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      overflow: hidden;
+    }
+
+    .feature-card {
+      background: var(--bg);
+      padding: 32px;
+      transition: background .2s;
+    }
+
+    .feature-card:hover { background: var(--bg-1); }
+
+    .feature-icon {
+      font-size: 22px;
+      margin-bottom: 16px;
+      display: block;
+    }
+
+    .feature-title {
+      font-size: 15px;
+      font-weight: 600;
+      margin-bottom: 8px;
+      color: var(--text);
+    }
+
+    .feature-desc {
+      font-size: 13px;
+      color: var(--text-muted);
+      line-height: 1.6;
+    }
+
+    /* ── COMMANDS ────────────────────────────────────────────────────── */
+    .section-label {
+      font-size: 12px;
+      font-family: var(--mono);
+      color: var(--text-dim);
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      margin-bottom: 16px;
+    }
+
+    .section-title {
+      font-size: clamp(28px, 4vw, 40px);
+      font-weight: 700;
+      letter-spacing: -1px;
+      margin-bottom: 12px;
+    }
+
+    .section-sub {
+      font-size: 15px;
+      color: var(--text-muted);
+      margin-bottom: 48px;
+      max-width: 480px;
+    }
+
+    .section-sub-center { text-align: center; margin-left: auto; margin-right: auto; }
+
+    .commands-list {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .command-row {
+      background: var(--bg-1);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 14px 20px;
+      display: flex;
+      align-items: flex-start;
+      gap: 16px;
+      transition: border-color .2s;
+    }
+
+    .command-row:hover { border-color: var(--border-mid); }
+
+    .command-code {
+      font-family: var(--mono);
+      font-size: 13px;
+      color: var(--cyan);
+      flex-shrink: 0;
+      padding-top: 1px;
+    }
+
+    .command-desc {
+      font-size: 13px;
+      color: var(--text-muted);
+      line-height: 1.5;
+    }
+
+    .command-desc strong { color: var(--text); }
+
+    .commands-note {
+      margin-top: 20px;
+      font-size: 13px;
+      color: var(--text-dim);
+    }
+
+    .commands-note code { color: var(--text-muted); }
+
+    /* ── SHORTCUTS ───────────────────────────────────────────────────── */
+    .shortcuts-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+      gap: 10px;
+    }
+
+    .shortcut-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px 16px;
+      background: var(--bg-1);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      transition: border-color .2s;
+    }
+
+    .shortcut-row:hover { border-color: var(--border-mid); }
+
+    .shortcut-keys {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      flex-shrink: 0;
+      min-width: 90px;
+      justify-content: flex-end;
+    }
+
+    .kbd {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      background: var(--bg-3);
+      border: 1px solid rgba(255,255,255,.15);
+      border-bottom: 2px solid rgba(255,255,255,.1);
+      border-radius: 5px;
+      padding: 3px 8px;
+      font-family: var(--mono);
+      font-size: 11px;
+      color: var(--text);
+      min-width: 28px;
+      box-shadow: 0 1px 0 rgba(255,255,255,.05), inset 0 1px 0 rgba(255,255,255,.08);
+      white-space: nowrap;
+    }
+
+    .kbd-sep {
+      font-size: 11px;
+      color: var(--text-dim);
+    }
+
+    .shortcut-desc {
+      font-size: 13px;
+      color: var(--text-muted);
+    }
+
+    /* ── FOOTER ──────────────────────────────────────────────────────── */
+    footer {
+      border-top: 1px solid var(--border);
+      padding: 40px 0;
+    }
+
+    .footer-inner {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 0 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 16px;
+    }
+
+    .footer-left {
+      font-family: var(--mono);
+      font-size: 13px;
+      color: var(--text-dim);
+    }
+
+    .footer-left a {
+      color: var(--text-muted);
+      text-decoration: none;
+      transition: color .2s;
+    }
+
+    .footer-left a:hover { color: var(--text); }
+
+    .footer-right { display: flex; gap: 20px; }
+
+    .footer-right a {
+      font-size: 13px;
+      color: var(--text-dim);
+      text-decoration: none;
+      transition: color .2s;
+    }
+
+    .footer-right a:hover { color: var(--text-muted); }
+
+    /* ── Responsive ──────────────────────────────────────────────────── */
+    @media (max-width: 768px) {
+      .pipeline { grid-template-columns: 1fr; }
+      .pipeline-arrow { transform: rotate(90deg); }
+      .nav-links { display: none; }
+      .hero { padding: 80px 0 60px; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- NAV -->
+  <nav>
+    <div class="nav-inner">
+      <a href="#" class="nav-logo"><span class="diamond">◆</span> 2chatty</a>
+      <ul class="nav-links">
+        <li><a href="#how-it-works">How it works</a></li>
+        <li><a href="#commands">Commands</a></li>
+        <li><a href="#shortcuts">Shortcuts</a></li>
+        <li><a href="https://github.com/avol-io/2chatty" target="_blank" rel="noopener">GitHub</a></li>
+        <li><a href="https://www.npmjs.com/package/@avol-io/2chatty" target="_blank" rel="noopener" class="nav-cta">npm →</a></li>
+      </ul>
+    </div>
+  </nav>
+
+  <!-- HERO -->
+  <section class="hero">
+    <div class="container">
+      <div class="hero-badge">
+        <span class="dot"></span>
+        zero dependencies · pure Node.js
+      </div>
+
+      <h1 class="hero-title">
+        <span class="word-2">2</span><span class="word-chatty"><span class="char">c</span><span class="char">h</span><span class="char">a</span><span class="char">t</span><span class="char">t</span><span class="char">y</span></span>
+      </h1>
+
+      <p class="hero-subtitle">Pick your source files. Dump them into markdown. Feed your AI.</p>
+
+      <p class="hero-caption">
+        Working with AI assistants outside your IDE? <strong>Context windows are precious.</strong>
+        2chatty lets you hand-pick exactly the files that matter, bundle them into a single
+        <code>chat.md</code> file, and <strong>attach it directly</strong> to any AI chat — giving the model exactly the context it needs, nothing more.
+      </p>
+
+      <div class="hero-actions">
+        <button class="btn-primary" id="btn-get-started" onclick="toggleSnippet()">
+          Get started →
+        </button>
+        <a href="https://github.com/avol-io/2chatty" class="btn-secondary" target="_blank" rel="noopener">
+          View on GitHub
+        </a>
+      </div>
+
+      <div class="hero-snippet" id="hero-snippet">
+        <div class="snippet-inner">
+          <code class="snippet-code" id="snippet-text">npx @avol-io/2chatty ts tsx</code>
+          <button class="snippet-copy" id="snippet-copy-btn" onclick="copySnippet()" title="Copy">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+          </button>
+        </div>
+        <p class="snippet-note">Run from your project root. Requires <strong>Node.js ≥ 18</strong>.</p>
+      </div>
+
+      <!-- Terminal -->
+      <div class="terminal-wrap">
+        <div class="terminal">
+          <div class="terminal-bar">
+            <div class="terminal-dots">
+              <div class="terminal-dot red"></div>
+              <div class="terminal-dot yellow"></div>
+              <div class="terminal-dot green"></div>
+            </div>
+            <div class="terminal-title">zsh — my-project</div>
+          </div>
+          <div class="terminal-body" id="terminal-body">
+            <span class="t-prompt">❯ </span><span class="t-cmd" id="term-output"></span><span class="t-cursor" id="term-cursor"></span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- PIPELINE -->
+  <section class="pipeline-section" id="how-it-works">
+    <div class="container">
+      <div class="section-head-center">
+        <p class="section-label">How it works</p>
+        <h2 class="section-title">One command. One file. Any AI.</h2>
+        <p class="section-sub ">Run the tool, pick your files interactively, and get a ready-to-attach markdown document.</p>
+      </div>
+
+      <div class="pipeline">
+        <!-- Left: command -->
+        <div class="pipeline-card">
+          <div class="pipeline-card-bar">
+            <div class="terminal-dots">
+              <div class="terminal-dot red"></div>
+              <div class="terminal-dot yellow"></div>
+              <div class="terminal-dot green"></div>
+            </div>
+            <span class="pipeline-card-label">terminal</span>
+          </div>
+          <div class="pipeline-card-body">
+            <div><span class="t-prompt">❯ </span><span class="t-cyan">npx @avol-io/2chatty ts tsx</span></div>
+            <div class="mt-10">
+              <div class="t-dim">◆ File Collector  exts: ts, tsx</div>
+              <div class="t-yellow">Selected: 3 / 24</div>
+              <div class="mt-6">
+                <div><span class="t-selected">[~]</span> <span class="t-dir">▾ src/</span> <span class="t-dim">(18 files)</span></div>
+                <div>&nbsp;&nbsp;<span class="t-selected">[✓]</span> Button.tsx</div>
+                <div>&nbsp;&nbsp;<span class="t-selected">[✓]</span> Input.tsx</div>
+                <div>&nbsp;&nbsp;<span class="t-dim">[ ]</span> <span class="t-dir">▸ hooks/</span> <span class="t-dim">(6)</span></div>
+                <div>&nbsp;&nbsp;<span class="t-selected">[✓]</span> app.ts</div>
+              </div>
+              <div class="mt-8"><span class="t-green">✓ Done!</span> <span class="t-dim">Appended 3 file(s) → chat.md</span></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Arrow -->
+        <div class="pipeline-arrow">
+          <svg width="120" height="60" viewBox="0 0 120 60">
+            <path class="arrow-path"
+              d="M 0 30 C 20 30, 25 8, 40 8 C 55 8, 55 52, 70 52 C 85 52, 90 30, 110 30" />
+            <polygon class="arrow-head" points="110,25 120,30 110,35" />
+          </svg>
+          <span class="pipeline-arrow-label">appended to</span>
+        </div>
+
+        <!-- Right: document / paper -->
+        <div class="doc-paper">
+          <div class="doc-paper-header">
+            <span class="doc-paper-icon">📄</span>
+            <span class="doc-paper-filename">chat.md</span>
+          </div>
+          <div class="doc-scroll-wrap">
+            <div class="doc-scroll">
+              <div class="doc-file">
+                <div class="doc-file-name">### `src/Button.tsx`</div>
+                <div class="doc-fence"><span class="doc-fence-lang">tsx</span></div>
+                <div class="doc-file-code">import React from 'react';<br>interface ButtonProps &#123;</div>
+                <div class="doc-file-ellipsis"><span class="ellipsis-line">&#x2022; &#x2022; &#x2022;</span></div>
+              </div>
+              <div class="doc-file">
+                <div class="doc-file-name">### `src/Input.tsx`</div>
+                <div class="doc-fence"><span class="doc-fence-lang">tsx</span></div>
+                <div class="doc-file-code">export const Input = (&#123;<br>&nbsp;&nbsp;value, onChange</div>
+                <div class="doc-file-ellipsis"><span class="ellipsis-line">&#x2022; &#x2022; &#x2022;</span></div>
+              </div>
+              <div class="doc-file">
+                <div class="doc-file-name">### `src/app.ts`</div>
+                <div class="doc-fence"><span class="doc-fence-lang">ts</span></div>
+                <div class="doc-file-code">import &#123; createApp &#125; from './';<br>const config: AppConfig = &#123;</div>
+                <div class="doc-file-ellipsis"><span class="ellipsis-line">&#x2022; &#x2022; &#x2022;</span></div>
+              </div>
+              <!-- clone for seamless loop -->
+              <div class="doc-file">
+                <div class="doc-file-name">### `src/Button.tsx`</div>
+                <div class="doc-fence"><span class="doc-fence-lang">tsx</span></div>
+                <div class="doc-file-code">import React from 'react';<br>interface ButtonProps &#123;</div>
+                <div class="doc-file-ellipsis"><span class="ellipsis-line">&#x2022; &#x2022; &#x2022;</span></div>
+              </div>
+              <div class="doc-file">
+                <div class="doc-file-name">### `src/Input.tsx`</div>
+                <div class="doc-fence"><span class="doc-fence-lang">tsx</span></div>
+                <div class="doc-file-code">export const Input = (&#123;<br>&nbsp;&nbsp;value, onChange</div>
+                <div class="doc-file-ellipsis"><span class="ellipsis-line">&#x2022; &#x2022; &#x2022;</span></div>
+              </div>
+              <div class="doc-file">
+                <div class="doc-file-name">### `src/app.ts`</div>
+                <div class="doc-fence"><span class="doc-fence-lang">ts</span></div>
+                <div class="doc-file-code">import &#123; createApp &#125; from './';<br>const config: AppConfig = &#123;</div>
+                <div class="doc-file-ellipsis"><span class="ellipsis-line">&#x2022; &#x2022; &#x2022;</span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- FEATURES -->
+  <section>
+    <div class="container">
+      <div class="features-grid">
+        <div class="feature-card">
+          <span class="feature-icon">⚡</span>
+          <div class="feature-title">Zero dependencies</div>
+          <p class="feature-desc">Pure Node.js built-ins only — no packages to install or audit. Requires only <strong>Node.js ≥ 18</strong>.</p>
+        </div>
+        <div class="feature-card">
+          <span class="feature-icon">🎯</span>
+          <div class="feature-title">Surgical context control</div>
+          <p class="feature-desc">Hand-pick files down to the individual level. Keep your AI context window focused on what matters.</p>
+        </div>
+        <div class="feature-card">
+          <span class="feature-icon">🌲</span>
+          <div class="feature-title">Smart tree traversal</div>
+          <p class="feature-desc">Traverses your entire project tree, automatically skipping <code>node_modules</code>, build artifacts, and common IDE folders.</p>
+        </div>
+        <div class="feature-card">
+          <span class="feature-icon">🔌</span>
+          <div class="feature-title">Any AI, any chat</div>
+          <p class="feature-desc">Output is plain markdown. Works with ChatGPT, Claude, Gemini, or any tool that accepts file attachments.</p>
+        </div>
+        <div class="feature-card">
+          <span class="feature-icon">📁</span>
+          <div class="feature-title">Progressive context building</div>
+          <p class="feature-desc">Run it multiple times with different filters and selections — each run appends to <code>chat.md</code>.</p>
+        </div>
+        <div class="feature-card">
+          <span class="feature-icon">🔍</span>
+          <div class="feature-title">Filter by extension</div>
+          <p class="feature-desc">Pass extensions as arguments or collect all files. Either way, the interactive UI lets you refine the selection.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- COMMANDS -->
+  <section id="commands">
+    <div class="container">
+      <p class="section-label">Usage</p>
+      <h2 class="section-title">Example commands</h2>
+      <p class="section-sub">Run from your project root. No global install needed.</p>
+
+      <div class="commands-list">
+        <div class="command-row">
+          <span class="command-code">npx @avol-io/2chatty ts tsx</span>
+          <span class="command-desc"><strong>TypeScript + React</strong> — collect only <code>.ts</code> and <code>.tsx</code> files</span>
+        </div>
+        <div class="command-row">
+          <span class="command-code">npx @avol-io/2chatty js java</span>
+          <span class="command-desc"><strong>JavaScript + Java</strong> — mix languages freely</span>
+        </div>
+        <div class="command-row">
+          <span class="command-code">npx @avol-io/2chatty ts tsx scss json</span>
+          <span class="command-desc"><strong>Full-stack sweep</strong> — include styles and config</span>
+        </div>
+        <div class="command-row">
+          <span class="command-code">npx @avol-io/2chatty</span>
+          <span class="command-desc"><strong>No filter</strong> — collect all files (will prompt for confirmation first)</span>
+        </div>
+      </div>
+
+      <p class="commands-note">
+        Output is appended to <code>chat.md</code> in your current directory. Delete it manually to start fresh.
+      </p>
+    </div>
+  </section>
+
+  <!-- SHORTCUTS -->
+  <section id="shortcuts">
+    <div class="container">
+      <p class="section-label">Keyboard</p>
+      <h2 class="section-title">Shortcuts</h2>
+      <p class="section-sub">Full keyboard control — no mouse required.</p>
+
+      <div class="shortcuts-grid">
+        <div class="shortcut-row">
+          <div class="shortcut-keys"><span class="kbd">↑</span><span class="kbd-sep">/</span><span class="kbd">↓</span></div>
+          <span class="shortcut-desc">Move cursor up / down</span>
+        </div>
+        <div class="shortcut-row">
+          <div class="shortcut-keys"><span class="kbd">→</span></div>
+          <span class="shortcut-desc">Expand folder or enter first child</span>
+        </div>
+        <div class="shortcut-row">
+          <div class="shortcut-keys"><span class="kbd">←</span></div>
+          <span class="shortcut-desc">Collapse folder or jump to parent</span>
+        </div>
+        <div class="shortcut-row">
+          <div class="shortcut-keys"><span class="kbd">Space</span></div>
+          <span class="shortcut-desc">Toggle file — or bulk-toggle all files in folder</span>
+        </div>
+        <div class="shortcut-row">
+          <div class="shortcut-keys"><span class="kbd">A</span></div>
+          <span class="shortcut-desc">Select all / deselect all</span>
+        </div>
+        <div class="shortcut-row">
+          <div class="shortcut-keys"><span class="kbd">E</span></div>
+          <span class="shortcut-desc">Expand all folders</span>
+        </div>
+        <div class="shortcut-row">
+          <div class="shortcut-keys"><span class="kbd">W</span></div>
+          <span class="shortcut-desc">Collapse all folders</span>
+        </div>
+        <div class="shortcut-row">
+          <div class="shortcut-keys"><span class="kbd">PgUp</span><span class="kbd-sep">/</span><span class="kbd">PgDn</span></div>
+          <span class="shortcut-desc">Scroll one page up / down</span>
+        </div>
+        <div class="shortcut-row">
+          <div class="shortcut-keys"><span class="kbd">Home</span><span class="kbd-sep">/</span><span class="kbd">End</span></div>
+          <span class="shortcut-desc">Jump to first / last item</span>
+        </div>
+        <div class="shortcut-row">
+          <div class="shortcut-keys"><span class="kbd">Enter</span></div>
+          <span class="shortcut-desc">Confirm selection and write chat.md</span>
+        </div>
+        <div class="shortcut-row">
+          <div class="shortcut-keys"><span class="kbd">Q</span><span class="kbd-sep">/</span><span class="kbd">Ctrl</span><span class="kbd-sep">+</span><span class="kbd">C</span></div>
+          <span class="shortcut-desc">Quit without writing</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- FOOTER -->
+  <footer>
+    <div class="footer-inner">
+      <div class="footer-left">
+        ◆ 2chatty — MIT License © <a href="https://www.avol.io" target="_blank" rel="noopener">avol.io</a>
+      </div>
+      <div class="footer-right">
+        <a href="https://github.com/avol-io/2chatty" target="_blank" rel="noopener">GitHub</a>
+        <a href="https://www.npmjs.com/package/@avol-io/2chatty" target="_blank" rel="noopener">npm</a>
+      </div>
+    </div>
+  </footer>
+
+  <script>
+    const frames = [
+      { text: 'npx ', pause: 0 },
+      { text: '@avol-io/2chatty', pause: 0 },
+      { text: ' ts', pause: 0 },
+      { text: ' tsx', pause: 0 },
+      { text: ' ', pause: 600 },
+      { clear: true  },
+      { text: '◆ File Collector  exts: ts, tsx  |  files found: 24', color: 'dim', instant: true },
+      { text: '\n↑↓ move · SPACE toggle · ENTER confirm · Q quit', color: 'dim', instant: true },
+      { text: '\nSelected: 0 / 24', color: 'yellow', instant: true },
+      { text: '\n\n  [ ] ▾ src/  (18 files)', instant: true },
+      { text: '\n  [ ] ▾ components/  (6 files)', instant: true },
+      { text: '\n        [ ] Button.tsx', instant: true },
+      { text: '\n        [ ] Input.tsx', instant: true },
+      { text: '\n        [ ] Modal.tsx', instant: true },
+      { text: '\n  [ ] ▸ hooks/  (4 files)', instant: true },
+      { text: '\n  [ ] app.ts', instant: true },
+      { pause: 600 },
+      { replace: '  [✓] ▾ components/', selected: true },
+      { replace: '        [✓] Button.tsx', selected: true },
+      { pause: 300 },
+      { replace: '        [✓] Input.tsx', selected: true },
+      { pause: 300 },
+      { replace: '  [✓] app.ts', selected: true },
+      { replace: 'Selected: 3 / 24', color: 'yellow' },
+      { pause: 800 },
+      { clear: true },
+      { text: '✓ Done!  Appended 3 file(s) → chat.md', color: 'green', instant: true },
+      { text: '\n  + src/components/Button.tsx', color: 'dim', instant: true },
+      { text: '\n  + src/components/Input.tsx', color: 'dim', instant: true },
+      { text: '\n  + src/app.ts', color: 'dim', instant: true },
+      { pause: 2000 },
+      { restart: true },
+    ];
+
+    const out    = document.getElementById('term-output');
+    const cursor = document.getElementById('term-cursor');
+
+    function typeText(el, text, speed, cb) {
+      const tokens = text.split(/( )/);
+      let ti = 0;
+      function nextToken() {
+        if (ti >= tokens.length) { cb && cb(); return; }
+        const token = tokens[ti++];
+        let ci = 0;
+        function nextChar() {
+          if (ci < token.length) {
+            el.innerHTML += token[ci] === '\n' ? '<br>' : token[ci];
+            ci++;
+            setTimeout(nextChar, speed + Math.random() * 15);
+          } else {
+            setTimeout(nextToken, token === ' ' ? 0 : 80);
+          }
+        }
+        nextChar();
+      }
+      nextToken();
+    }
+
+    function run(frameIdx) {
+      if (frameIdx >= frames.length) return;
+      const f = frames[frameIdx];
+      const next = () => run(frameIdx + 1);
+
+      if (f.restart) { setTimeout(() => { out.innerHTML = ''; run(0); }, 400); return; }
+      if (f.clear)   { out.innerHTML = ''; next(); return; }
+      if (f.pause)   { setTimeout(next, f.pause); return; }
+
+      if (f.replace) {
+        out.innerHTML = out.innerHTML.replace(
+          f.replace.replace('[✓]', '[ ]'),
+          f.selected
+            ? `<span class="t-selected">${f.replace}</span>`
+            : `<span class="t-${f.color || 'dim'}">${f.replace}</span>`
+        );
+        next(); return;
+      }
+
+      const color = f.color === 'dim' ? 't-dim' : f.color === 'yellow' ? 't-yellow' : f.color === 'green' ? 't-green' : null;
+      const wrap  = color ? `<span class="${color}">` : '';
+      const close = color ? `</span>` : '';
+
+      if (f.instant) {
+        const lines = f.text.split('\n');
+        lines.forEach((l, i) => {
+          if (i > 0) out.innerHTML += '<br>';
+          out.innerHTML += wrap + l + close;
+        });
+        next();
+      } else {
+        const span = document.createElement('span');
+        out.appendChild(span);
+        typeText(span, f.text, 45, next);
+      }
+    }
+
+    run(0);
+
+    // ── Snippet toggle ──────────────────────────────────────────────────
+    const snippetEl = document.getElementById('hero-snippet');
+    snippetEl.style.display = 'none';
+
+    function toggleSnippet() {
+      const visible = snippetEl.style.display !== 'none';
+      snippetEl.style.display = visible ? 'none' : 'block';
+    }
+
+    function copySnippet() {
+      const text = document.getElementById('snippet-text').textContent;
+      const btn  = document.getElementById('snippet-copy-btn');
+      navigator.clipboard.writeText("npx @avol-io/2chatty").then(() => {
+        btn.classList.add('copied');
+        btn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>';
+        setTimeout(() => {
+          btn.classList.remove('copied');
+          btn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>';
+        }, 1800);
+      });
+    }
+  </script>
+</body>
+</html>
